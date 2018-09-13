@@ -1,0 +1,11 @@
+10 input i 
+20 if i < 3 then goto 50
+30 print 100
+35 gosub 100
+40 print 34 - 6 * 2
+50 a = 100 / 3
+60 if a > 5 then print a
+120 end
+100 print "Это подпрограмма"
+110 return
+

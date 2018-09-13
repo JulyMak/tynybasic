@@ -37,15 +37,15 @@ struct commands {
 	char command[20];
 	char tok;
 } table[] = { 
-	"print", PRINT, 
-	"input", INPUT,
-	"if", IF,
-	"then", THEN,
-	"goto", GOTO,
-	"gosub", GOSUB,
-	"return", RETURN,
-	"end", END,
-	"", END  
+	{"print", PRINT}, 
+	{"input", INPUT},
+	{"if", IF},
+	{"then", THEN},
+	{"goto", GOTO},
+	{"gosub", GOSUB},
+	{"return", RETURN},
+	{"end", END},
+	{"", END}  
 };
 
 char token[80];
@@ -80,10 +80,11 @@ int main(int argc, char *argv[])
 
 	if(!(p_buf = (char *) malloc(PROG_SIZE))) {
 		error_type(2);
+		exit(1);
 	}
 
-	if(!load_program(p_buf,argv[1])) exit(1);
-	if(!(out = fopen(argv[2], "w+"))) return 0;
+	if(!load_program(p_buf,"test.txt")) exit(1);
+	if(!(out = fopen(argv[2], "w+"))) exit(1);
 
 	prog = p_buf;
 	scan_labels(); 
@@ -125,15 +126,13 @@ int load_program(char *p, char *fname)
 {
 	FILE *fp;
 	int i = 0;
-
 	if(!(fp = fopen(fname, "rb"))) return 0; 
-
 	i = 0;
 	do {
 		*p = getc(fp);
 		p++; i++;
 	} while(!feof(fp) && i < PROG_SIZE);
-	*(p-2) = '\0'; 
+	*(p - 2) = '\0'; 
 	fclose(fp);
 	return 1;
 }
@@ -146,21 +145,18 @@ void assignment()
 		error_type(0);
 	}
 	var = toupper(*token) - 'A'; 
-
 	get_token();
 	if(*token != '=') {
 		error_type(0);
 	}
-
 	get_exp(&value);
-
+	if (value > 32767 || value < - 32767) error_type(0);
 	variables[var] = value;
 }
 
 void print()
 {
 	int answer;
-	int len = 0, spaces;
 	char last_delim;
 
 	do {
@@ -168,7 +164,6 @@ void print()
 		if(tok == EOL || tok == FINISHED) break;
 		if(token_type == QUOTE) { 
 			fputs(token,out);
-			len += strlen(token); 
 			get_token();
 		}
 		else { 
@@ -176,10 +171,13 @@ void print()
 			get_exp(&answer);
 			get_token();
 			fprintf(out,"%d",answer);
-			len += answer;
 		}
-		
-	} while (*token == ';' || *token == ',');
+		last_delim = *token;
+	} while ( *token == ',');
+
+	if(tok == EOL || tok == FINISHED) {
+		if(last_delim != ',') fputs("\n",out);
+	}
 }
 
 void scan_labels()
@@ -332,7 +330,7 @@ void exec_if()
 
 void input()
 {
-	char var;
+	int var;
 	int i;
 	get_token(); 
 	if(token_type == QUOTE) {
@@ -344,6 +342,7 @@ void input()
 	else printf("input: "); 
 	var = toupper(*token) -'A'; 
 	scanf("%d", &i); 
+	if( i  > 32767 || i < -32767) error_type(0);
 	variables[var] = i; 
 }
 
@@ -555,8 +554,6 @@ void arith(o, r, h)
 	char o;
 int *r, *h;
 {
-	int t;
-
 	switch(o) {
 	case '-':
 		*r = *r - *h;
@@ -585,11 +582,12 @@ int *r, *h;
 	}
 }
 
+
 int find_var(char *s)
 {
 	if(!isalpha(*s)){
 		error_type(0); 
 		return 0;
 	}
-	return variables[toupper(*token)-'A'];
+	return variables[toupper(*token) - 'A'];
 } 
