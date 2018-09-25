@@ -80,11 +80,10 @@ int main(int argc, char *argv[])
 
 	if(!(p_buf = (char *) malloc(PROG_SIZE))) {
 		error_type(2);
-		exit(1);
 	}
 
 	if(!load_program(p_buf,"test.txt")) exit(1);
-	if(!(out = fopen(argv[2], "w+"))) exit(1);
+	if(!(out = fopen(argv[2], "w"))) exit(1);
 
 	prog = p_buf;
 	scan_labels(); 
@@ -132,7 +131,7 @@ int load_program(char *p, char *fname)
 		*p = getc(fp);
 		p++; i++;
 	} while(!feof(fp) && i < PROG_SIZE);
-	*(p - 2) = '\0'; 
+	*(p - 1) = '\0';
 	fclose(fp);
 	return 1;
 }
@@ -211,7 +210,7 @@ void scan_labels()
 void find_eol()
 {
 	while(*prog != '\n'  && *prog != '\0') ++prog;
-	if(*prog) prog++;
+	if(*prog) prog++; 
 }
 
 int get_next_label(char *s)
@@ -334,7 +333,7 @@ void input()
 	int i;
 	get_token(); 
 	if(token_type == QUOTE) {
-		fputs(token,out); 
+		printf(token); 
 		get_token();
 		if(*token != ',') error_type(0);
 		get_token();
@@ -378,12 +377,14 @@ void gpush(s)
 
 char *gpop()
 {
+
 	if(gtos == 0) {
 		error_type(0);
 		return 0;
 	}
 	return(gstack[gtos--]);
 }
+
 void get_exp(result)
 	int *result;
 {
