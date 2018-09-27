@@ -7,6 +7,8 @@
 #define LAB_LEN 10
 #define SUB_NEST 25
 #define PROG_SIZE 10000
+#define LOW_LIMIT -32767
+#define HIGH_LIMIT 32767
 
 #define DELIMITER  1
 #define VARIABLE  2
@@ -65,7 +67,7 @@ void exec_if(), input();
 void gosub(), greturn(), gpush(), label_init();
 void error_type(), get_exp(), putback();
 void level2(), level3(),level4(), primitive();
-void arith();
+void arith(char o, int *r, int *h);
 int load_program(char *p, char *fname), look_up(char *s);
 int get_next_label(char *s), iswhite(char c), isdelim(char c);
 int find_var(char *s), get_token();
@@ -115,6 +117,7 @@ int main(int argc, char *argv[])
 				greturn();
 				break;
 			case END:
+				fclose(out);
 				exit(0);
 		}
 	} while (tok != FINISHED);
@@ -149,7 +152,7 @@ void assignment()
 		error_type(0);
 	}
 	get_exp(&value);
-	if (value > 32767 || value < - 32767) error_type(0);
+	if (value > HIGH_LIMIT || value < LOW_LIMIT) error_type(0);
 	variables[var] = value;
 }
 
@@ -223,8 +226,7 @@ int get_next_label(char *s)
 	return -1;
 }
 
-char *find_label(s)
-	char *s;
+char *find_label(char *s)
 {
 	int t;
 
@@ -341,7 +343,7 @@ void input()
 	else printf("input: "); 
 	var = toupper(*token) -'A'; 
 	scanf("%d", &i); 
-	if( i  > 32767 || i < -32767) error_type(0);
+	if( i  > HIGH_LIMIT || i < LOW_LIMIT) error_type(0);
 	variables[var] = i; 
 }
 
@@ -363,8 +365,7 @@ void greturn()
 	prog = gpop();
 }
 
-void gpush(s)
-	char *s;
+void gpush(char *s)
 {
 	gtos++;
 
@@ -385,8 +386,7 @@ char *gpop()
 	return(gstack[gtos--]);
 }
 
-void get_exp(result)
-	int *result;
+void get_exp(int *result)
 {
 	get_token();
 	if(!*token) {
@@ -397,8 +397,7 @@ void get_exp(result)
 	putback(); 
 }
 
-void error_type(error)
-	int error;
+void error_type(int error)
 {
 	static char *e[]= {
 		"WHAT?",
@@ -475,13 +474,13 @@ int look_up(char *s)
 		p++; 
 	}
 	for(i = 0; *table[i].command; i++)
-		if(!strcmp(table[i].command, s)) return table[i].tok;
+       		if(!strcmp(table[i].command, s)) return table[i].tok;
 	return 0; 
 }
 
 int isdelim(char c)
 {
-	if(strchr(" ;,+-<>/*%^=()", c) || c == 9 || c == '\r' || c == 0)
+	if(strchr(" ;,+-<>/*%^=()", c) || c == '\t' || c == '\r' || c == 0)
 		return 1;
 	return 0;
 }
@@ -492,8 +491,7 @@ int iswhite(char c)
 	else return 0;
 }
 
-void level2(result)
-	int *result;
+void level2(int *result)
 {
 	char  op;
 	int hold;
@@ -505,8 +503,7 @@ void level2(result)
 	}
 }
 
-void level3(result)
-	int *result;
+void level3(int *result)
 {
 	char  op;
 	int hold;
@@ -519,8 +516,7 @@ void level3(result)
 	}
 }
 
-void level4(result)
-	int *result;
+void level4(int *result)
 {
 	if((*token == '(') && (token_type == DELIMITER)) {
 		get_token();
@@ -533,8 +529,7 @@ void level4(result)
 		primitive(result);
 }
 
-void primitive(result)
-	int *result;
+void primitive(int *result)
 {
 
 	switch(token_type) {
@@ -551,32 +546,30 @@ void primitive(result)
 	}
 }
 
-void arith(o, r, h)
-	char o;
-int *r, *h;
+void arith(char o, int *r, int *h)
 {
 	switch(o) {
 	case '-':
 		*r = *r - *h;
-		if(*r > 32767 || *r < -32767){
+		if(*r > HIGH_LIMIT || *r < LOW_LIMIT){
 			error_type(1);
 		}
 		break;
 	case '+':
 		*r = *r + *h;
-		if(*r > 32767 || *r < -32767){
+		if(*r > HIGH_LIMIT || *r < LOW_LIMIT){
 			error_type(1);
 		}
 		break;
 	case '*':
 		*r = *r * *h;
-		if(*r > 32767 || *r < -32767){
+		if(*r > HIGH_LIMIT || *r < LOW_LIMIT){
 			error_type(1);
 		}
 		break;
 	case '/':
 		*r = (*r)/(*h);
-		if(*r > 32767 || *r < -32767){
+		if(*r > HIGH_LIMIT || *r < LOW_LIMIT){
 			error_type(1);
 		}
 		break;
